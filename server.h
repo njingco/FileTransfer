@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "constants.h"
+#include "child.h"
 
 #define CLIENT_MAX 3
 #define COMMAND_LENGTH 4
