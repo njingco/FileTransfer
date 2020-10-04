@@ -10,7 +10,9 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define SERVER_LISTEN_PORT 7005
+#include "constants.h"
+
 #define CLIENT_MAX 3
+#define COMMAND_LENGTH 4
 
 #endif

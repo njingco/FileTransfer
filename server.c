@@ -12,6 +12,13 @@ int main(int argc, char** argv)
     struct sockaddr_in server, client;
     socklen_t client_len;
 
+    char *bp, buffer[BUFFER_LENGTH];
+    int n, bytes_to_read;
+
+    char command[COMMAND_LENGTH];
+    char* fileName;
+    FILE* file;
+
     int currentClient = 0;
 
     if ((listen_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -43,6 +50,7 @@ int main(int argc, char** argv)
         }
         fprintf(stdout, "Client connected with remote address: %s\n", inet_ntoa(client.sin_addr));
         control_sockets[currentClient] = control_sd;
+        fprintf(stdout, "control_sd: %d\n", control_sd);
 
         if ((pid[currentClient] = fork()) == -1)
         {
@@ -52,7 +60,25 @@ int main(int argc, char** argv)
         }
         currentClient++;
     }
-    fprintf(stdout, "Child #%d with pid: %d\n",currentClient, getpid());
+    fprintf(stdout, "Child #%d with pid: %d\nChild control_sd: %d\n",currentClient, getpid(), control_sd);
+
+    bp = buffer;
+    bytes_to_read = BUFFER_LENGTH;
+
+    //Receive transfer command + filename (+port?)
+    while ((n = recv(control_sd, bp, bytes_to_read, 0)) < 18)
+    {
+        bp += n;
+        bytes_to_read -= n;
+    }
+
+    //Parse command and filename (+port?)
+    memset(command, 0, 4);
+    strncpy(command, buffer, 3);
+    memset(command+3, 0, 1);
+    fprintf(stdout, "Command received: %s\n", command);
+    //for(int i = 0; i < BUFFER_LENGTH; i++) {
+    //}
 
     return 1;
 }
