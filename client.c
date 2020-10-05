@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
 
         // Wait for OKY
         recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
-        // fprintf(stdout, "Received from Server: %s\n", rcvBuf);
 
         if (strcmp(rcvBuf, COMMAND_OKAY) == 0)
         {
@@ -64,9 +63,8 @@ int main(int argc, char *argv[])
     sprintf(fileDir, "./files/%s", fileName);
 
     // GET Request - write revceived buffer to file
-    if (strcmp(rcvBuf, COMMAND_GET))
+    if (strcmp(reqType, COMMAND_GET) == 0)
     {
-
         FILE *file = fopen(fileDir, "w+");
 
         while (true)
@@ -74,24 +72,24 @@ int main(int argc, char *argv[])
             memset(rcvBuf, 0, BUFFER_SIZE);
             recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
 
-            if (strcmp(rcvBuf, COMMAND_FNF))
+            if (strcmp(rcvBuf, COMMAND_FINISH) == 0)
             {
-                fprintf(stdout, "File Recieved\n");
+                fprintf(stdout, "File Received\n");
                 break;
             }
 
             if (write_file(file, rcvBuf) <= 0)
             {
-                close(file);
+                fclose(file);
                 fprintf(stderr, "Error with writing to the file\n");
                 close(socketDesc);
                 exit(1);
             }
         }
-        close(file);
+        fclose(file);
     }
     // SEND Request - read from file and write to buffer
-    else if (strcmp(rcvBuf, COMMAND_SEND))
+    else if (strcmp(reqType, COMMAND_SEND) == 0)
     {
         memset(sndBuf, 0, BUFFER_SIZE);
 
@@ -139,7 +137,6 @@ int connectToServer(char *svrIP, int port)
     if (!setServerDesc(socketDesc, svrDesc))
         exit(1);
 
-    fprintf(stdout, "Connected \n");
     return socketDesc;
 }
 // Creates a scoket descriptor
@@ -189,7 +186,6 @@ bool setServerDesc(int sockDesc, struct sockaddr_in server)
         fprintf(stderr, "Can't connect to server\n");
         return false;
     }
-    fprintf(stdout, "Connected\n");
     return true;
 }
 

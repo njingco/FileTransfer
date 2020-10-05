@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/client",
-      "args": ["192.168.1.72", "7000"],
+      "args": ["70.68.75.86", "7007"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
