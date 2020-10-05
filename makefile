@@ -6,8 +6,8 @@ all: server client
 server: server.o child.o utilities.o
 	$(CC) -o server server.o child.o utilities.o $(CLIB)
 
-client: client.o
-	$(CC) -o client client.o
+client: client.o utilities.o
+	$(CC) -o client client.o utilities.o
 
 clean:
 	rm -f *.o core.* server client

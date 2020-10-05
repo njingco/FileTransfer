@@ -59,9 +59,16 @@ int main(int argc, char *argv[])
     // Connect to Server for File Transfer
     socketDesc = connectToServer(svrIP, reqPort);
 
+    // File Dir
+    char fileDir[FILE_SIZE + 8];
+    sprintf(fileDir, "./files/%s", fileName);
+
+    // GET Request - write revceived buffer to file
     if (strcmp(rcvBuf, COMMAND_GET))
     {
-        FILE *file = fopen(fileName, "w+");
+
+        FILE *file = fopen(fileDir, "w+");
+
         while (true)
         {
             memset(rcvBuf, 0, BUFFER_SIZE);
@@ -73,20 +80,22 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            if (write_file(file, rcvBuf) != 0)
+            if (write_file(file, rcvBuf) <= 0)
             {
+                close(file);
                 fprintf(stderr, "Error with writing to the file\n");
                 close(socketDesc);
                 exit(1);
             }
         }
+        close(file);
     }
+    // SEND Request - read from file and write to buffer
     else if (strcmp(rcvBuf, COMMAND_SEND))
     {
         memset(sndBuf, 0, BUFFER_SIZE);
-        strcat(fileName, "./files/");
 
-        FILE *file = fopen(fileName, "r");
+        FILE *file = fopen(fileDir, "r");
 
         while (read_file(file, sndBuf) != 0)
         {
@@ -220,8 +229,6 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
 
     strcpy(reqType, type);
     strcat(file, fileName);
-
-    fprintf(stdout, "File: %s", fileName);
 
     return buffer;
 }
