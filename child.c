@@ -122,8 +122,8 @@ int command_get_controller(int* sd, char* buffer, char* fileName)
 
     FILE* file = malloc(sizeof(*file));
     char* filepath = malloc(255);
-    strcpy(filepath, "./files/beemovie.txt");
-    //strcpy(filepath+8, fileName);
+    strcpy(filepath, "./files/");
+    strcpy(filepath+8, fileName);
     if((file = fopen(filepath, "r")) == NULL)
     {
         perror("fopen\n");
@@ -132,6 +132,8 @@ int command_get_controller(int* sd, char* buffer, char* fileName)
     if(fseek(file, 0, SEEK_SET) == -1)
     {
         perror("Error in fseek\n");
+        result = -1;
+        return result;
     }
 
     while(read_file(file, buffer) != 0)
@@ -143,5 +145,10 @@ int command_get_controller(int* sd, char* buffer, char* fileName)
 
 int command_snd_controller(int* sd, char* buffer, char* fileName)
 {
-    return 0;
+    int result = 0;
+
+    FILE* file = malloc(sizeof(*file));
+    char* filepath = malloc(255);
+
+    return result;
 }
