@@ -7,7 +7,7 @@ int receive_request(int* sd, char* bp, int* btr, char* cmd, int* port, char* fil
     int n;
     while(!validRequest)
     {
-        while((n = recv(*sd, bp, *btr, 0)) < 21)
+        while((n = recv(*sd, bp, *btr, 0)) < BUFFER_SIZE)
         {
             bp += n;
             btr -= n;
@@ -116,10 +116,28 @@ int send_data(int* sd, char*buffer)
     return result;
 }
 
-int command_get_controller(int* sd, char* buffer, char* fileName)
+int receive_data(int* sd, char* buffer)
 {
     int result = 0;
+    int btr = BUFFER_SIZE;
+    int n;
 
+    while((n = recv(*sd, buffer, btr, 0)) < BUFFER_SIZE)
+    {
+        if(n == -1)
+        {
+            result = -1;
+        } else
+        {
+            buffer += n;
+            btr -= n;
+        }
+    }
+    return result;
+}
+
+void command_get_controller(int* sd, char* buffer, char* fileName)
+{
     FILE* file = malloc(sizeof(*file));
     char* filepath = malloc(255);
     strcpy(filepath, "./files/");
@@ -132,23 +150,44 @@ int command_get_controller(int* sd, char* buffer, char* fileName)
     if(fseek(file, 0, SEEK_SET) == -1)
     {
         perror("Error in fseek\n");
-        result = -1;
-        return result;
     }
 
     while(read_file(file, buffer) != 0)
     {
         send_data(sd, buffer);
     }
-    return result;
+    memset(buffer, 0, BUFFER_SIZE);
+    strcpy(buffer, COMMAND_FIN);
+    send_data(sd, buffer);
+
+    fclose(file);
+    free(filepath);
+    _exit(0);
 }
 
-int command_snd_controller(int* sd, char* buffer, char* fileName)
+void command_snd_controller(int* sd, char* buffer, char* fileName)
 {
-    int result = 0;
-
     FILE* file = malloc(sizeof(*file));
     char* filepath = malloc(255);
+    strcpy(filepath, "./files/beemovie.txt");
+    //strcpy(filepath+8, fileName);
 
-    return result;
+    int transfer_complete = 0;
+
+    if((file = fopen(filepath, "w+")) == NULL)
+    {
+        perror("fopen\n");
+    }
+
+    while(!transfer_complete)
+    {
+        receive_data(sd, buffer);
+        if(strcmp(buffer, COMMAND_FIN) == 0)
+        {
+            transfer_complete = 1;
+        } else 
+        {
+            //write data to file
+        }
+    }
 }

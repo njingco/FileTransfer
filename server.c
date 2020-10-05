@@ -5,7 +5,7 @@ int control_sockets[CLIENT_MAX];
 
 int main(int argc, char** argv)
 {
-    int listen_sd, control_sd, data_lsd, data_sd;
+    int listen_sd, control_sd, data_sd;
     int listen_port = SERVER_LISTEN_PORT;
     int data_port;
 
@@ -13,11 +13,10 @@ int main(int argc, char** argv)
     socklen_t client_len, data_client_len;
 
     char *bp, buffer[BUFFER_SIZE];
-    int n, bytes_to_read;
+    int bytes_to_read;
 
     char command[COMMAND_LENGTH];
     char *fileName = (char*)malloc(sizeof(char*));
-    FILE* file;
 
     int currentClient = 0;
 
@@ -62,8 +61,6 @@ int main(int argc, char** argv)
     }
     fprintf(stdout, "Child #%d with pid: %d\nChild control_sd: %d\n",currentClient, getpid(), control_sd);
 
-    int validRequest = 0;
-
     bp = buffer;
     bytes_to_read = BUFFER_SIZE;
 
@@ -99,7 +96,7 @@ int main(int argc, char** argv)
         command_get_controller(&data_sd, bp, fileName);
     } else if (strcmp(command, COMMAND_SEND) == 0)
     {
-        command_snd_controller();
+        command_snd_controller(&data_sd, bp, fileName);
     }
 
     while(1);
