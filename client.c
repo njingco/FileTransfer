@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
             close(socketDesc);
             break;
         }
-        else if (strcmp(rcvBuf, COMMAND_FNF == 0))
+        else if (strcmp(rcvBuf, COMMAND_FNF) == 0)
         {
             fprintf(stdout, "\nFile you entered is not found (%s)\n", fileName);
             send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
