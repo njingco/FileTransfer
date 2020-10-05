@@ -159,6 +159,7 @@ void command_get_controller(int* sd, char* buffer, char* fileName)
     memset(buffer, 0, BUFFER_SIZE);
     strcpy(buffer, COMMAND_FIN);
     send_data(sd, buffer);
+    fprintf(stdout, "FIN sent\n");
 
     fclose(file);
     free(filepath);
@@ -169,8 +170,8 @@ void command_snd_controller(int* sd, char* buffer, char* fileName)
 {
     FILE* file = malloc(sizeof(*file));
     char* filepath = malloc(255);
-    strcpy(filepath, "./files/beemovie.txt");
-    //strcpy(filepath+8, fileName);
+    strcpy(filepath, "./files/");
+    strcpy(filepath+8, fileName);
 
     int transfer_complete = 0;
 
@@ -185,9 +186,13 @@ void command_snd_controller(int* sd, char* buffer, char* fileName)
         if(strcmp(buffer, COMMAND_FIN) == 0)
         {
             transfer_complete = 1;
-        } else 
+        } else
         {
             //write data to file
         }
     }
+
+    fclose(file);
+    free(filepath);
+    _exit(0);
 }
