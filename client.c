@@ -1,4 +1,5 @@
 #include "client.h"
+#include "utilities.h"
 
 int main(int argc, char *argv[])
 {
@@ -8,6 +9,7 @@ int main(int argc, char *argv[])
     char reqType[COMMAND_SIZE];
     char fileName[FILE_SIZE];
     char rcvBuf[BUFFER_SIZE];
+    char sndBuf[BUFFER_SIZE];
 
     // get IP and port number for arguement
     switch (argc)
@@ -25,8 +27,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "Server Port: %d\n", reqPort);
 
     // Connect to Server Connection Port -----------------------------------
-    // socketDesc = connectToServer(svrIP, SERVER_LISTEN_PORT);
-    socketDesc = connectToServer(svrIP, 7000);
+    socketDesc = connectToServer(svrIP, SERVER_LISTEN_PORT);
 
     // Send Request to Server ----------------------------------------------
     while (true)
@@ -60,12 +61,45 @@ int main(int argc, char *argv[])
 
     if (strcmp(rcvBuf, COMMAND_GET))
     {
+        FILE *file = fopen(fileName, "w+");
+        while (true)
+        {
+            memset(rcvBuf, 0, BUFFER_SIZE);
+            recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
+
+            if (strcmp(rcvBuf, COMMAND_FNF))
+            {
+                fprintf(stdout, "File Recieved\n");
+                break;
+            }
+
+            if (write_file(file, rcvBuf) != 0)
+            {
+                fprintf(stderr, "Error with writing to the file\n");
+                close(socketDesc);
+                exit(1);
+            }
+        }
     }
     else if (strcmp(rcvBuf, COMMAND_SEND))
     {
-        // Open file
+        memset(sndBuf, 0, BUFFER_SIZE);
+        strcat(fileName, "./files/");
+
+        FILE *file = fopen(fileName, "r");
+
+        while (read_file(file, sndBuf) != 0)
+        {
+            send(socketDesc, sndBuf, BUFFER_SIZE, 0);
+            memset(sndBuf, 0, BUFFER_SIZE);
+        }
+        memset(sndBuf, 0, BUFFER_SIZE);
+        strcpy(sndBuf, COMMAND_FNF);
+        send(socketDesc, sndBuf, BUFFER_SIZE, 0);
     }
 
+    close(socketDesc);
+    exit(1);
     return 0;
 }
 
@@ -157,6 +191,8 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
     char *buffer = malloc(BUFFER_SIZE);
     bool validType = false;
 
+    memset(buffer, 0, BUFFER_SIZE);
+
     while (!validType)
     {
         fprintf(stdout, "\nEnter the Request Type (SND, GET, or EXT): ");
@@ -178,16 +214,14 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
     fprintf(stdout, "Enter the File Name with type (text.txt ): ");
     fflush(stdout);
 
-    if (fscanf(stdin, "%s", fileName))
-    {
-        fprintf(stdout, "Types: %s \n", type);
-        fprintf(stdout, "File: %s \n", fileName);
-    }
+    fscanf(stdin, "%s", fileName);
 
     sprintf(buffer, "%s:%d:%s", type, port, fileName);
 
     strcpy(reqType, type);
-    strcpy(file, fileName);
+    strcat(file, fileName);
+
+    fprintf(stdout, "File: %s", fileName);
 
     return buffer;
 }
