@@ -3,8 +3,8 @@ CLIB = -lpthread
 
 all: server client
 
-server: server.o
-	$(CC) -o server server.o $(CLIB)
+server: server.o child.o utilities.o
+	$(CC) -o server server.o child.o utilities.o $(CLIB)
 
 client: client.o
 	$(CC) -o client client.o
@@ -17,3 +17,9 @@ server.o:
 
 client.o:
 	$(CC) -c client.c
+
+child.o:
+	$(CC) -c child.c
+
+utilities.o:
+	$(CC) -c utilities.c
