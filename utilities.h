@@ -3,6 +3,7 @@
 
 #include "constants.h"
 
-int open_file(FILE*, char*);
+size_t read_file(FILE*, char*);
 
-#ifndef
+
+#endif

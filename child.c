@@ -107,14 +107,12 @@ int send_oky(int* sd, char*buffer)
 int send_data(int* sd, char*buffer)
 {
     int result = 0;
-    memset(buffer, 0, BUFFER_SIZE);
-    //Fill buffer here
-    memset(buffer, 'z', BUFFER_SIZE);
 
     if(send(*sd, buffer, BUFFER_SIZE, 0) == -1)
     {
         result = -1;
     }
+    memset(buffer, 0, BUFFER_SIZE);
     return result;
 }
 
@@ -124,21 +122,26 @@ int command_get_controller(int* sd, char* buffer, char* fileName)
 
     FILE* file = malloc(sizeof(*file));
     char* filepath = malloc(255);
-    strcpy(filepath, "./files/");
-    strcpy(filepath+8, fileName);
-
-    if(open_file(file, filepath) == -1)
+    strcpy(filepath, "./files/beemovie.txt");
+    //strcpy(filepath+8, fileName);
+    if((file = fopen(filepath, "r")) == NULL)
     {
-        fprintf(stderr, "Error opening file\n");
-    } else
-    {
-        fprintf(stdout, "File opened\n");
+        perror("fopen\n");
     }
-    send_data(sd, buffer);
+
+    if(fseek(file, 0, SEEK_SET) == -1)
+    {
+        perror("Error in fseek\n");
+    }
+
+    while(read_file(file, buffer) != 0)
+    {
+        send_data(sd, buffer);
+    }
     return result;
 }
 
-int command_snd_controller()
+int command_snd_controller(int* sd, char* buffer, char* fileName)
 {
     return 0;
 }
