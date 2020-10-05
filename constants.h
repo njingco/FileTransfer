@@ -22,8 +22,8 @@
 
 #define COMMAND_OKAY "OKY"
 #define COMMAND_FNF "FNF"
-#define COMMAND_ERROR "ERR"
-#define COMMAND_FIN "FIN"
+#define COMMAND_EROR "ERR"
+#define COMMAND_FINISH "FIN"
 
 #define COMMAND_GET "GET"
 #define COMMAND_SEND "SND"
