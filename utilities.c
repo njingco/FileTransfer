@@ -1,6 +1,6 @@
 #include "utilities.h"
 
-size_t read_file(FILE* file, char* buffer)
+size_t read_file(FILE *file, char *buffer)
 {
     size_t result = 0;
     result = fread(buffer, 1, BUFFER_SIZE, file);
@@ -8,10 +8,9 @@ size_t read_file(FILE* file, char* buffer)
     return result;
 }
 
-size_t write_file(FILE* file, char* buffer)
+int write_file(FILE *file, char *buffer)
 {
-    size_t result = 0;
+    size_t result = -1;
     result = fwrite(buffer, 1, BUFFER_SIZE, file);
-    fprintf(stdout, "result %lu\n", result);
     return result;
 }

@@ -16,6 +16,7 @@ int parse_port(int*, char*);
 
 int send_err(int*, char*);
 int send_oky(int*, char*);
+int send_fnf(int*, char*);
 int send_data(int*, char*);
 
 int receive_data(int*, char*);
