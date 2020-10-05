@@ -5,10 +5,10 @@ int receive_request(int *sd, char *bp, int *btr, char *cmd, int *port, char *fil
     int result = 0;
     int validRequest = 0;
     int n;
-    int fileLength = 0;
     FILE* file = malloc(sizeof(*file));
     memset(file, 0, sizeof(*file));
     char* filepath = malloc(255);
+
     while (!validRequest)
     {
         int bytes_to_read = *btr;
@@ -37,30 +37,31 @@ int receive_request(int *sd, char *bp, int *btr, char *cmd, int *port, char *fil
         {
             memset(fileName, 0, 255);
             strcpy(fileName, bp + 9);
-            strcpy(filepath, "./files/");
-            strcpy(filepath+8, fileName);
-            fprintf(stdout, "Filepath: %s\n", filepath);
-            if((file = fopen(filepath, "r")) == NULL)
+            if((strcmp(cmd, COMMAND_GET)) == 0)
             {
-                perror("fopen, receive_request\n");
-                send_fnf(sd, bp);
-                fprintf(stdout, "FNF sent\n");
-                fflush(stdout);
-                //fclose(file);
-                //memset(file, 0, sizeof(*file));
-                memset(filepath, 0, 255);
-                fprintf(stdout, "filepath cleared: %s\n", filepath);
-                fflush(stdout);
-                success = 0;
-            } else
-            {
-                fseek(file, 0, SEEK_END);
-                fileLength = ftell(file);
+                strcpy(filepath, "./files/");
+                strcpy(filepath+8, fileName);
+                fprintf(stdout, "Filepath: %s\n", filepath);
+                if((file = fopen(filepath, "r")) == NULL)
+                {
+                    perror("fopen, receive_request\n");
+                    send_fnf(sd, bp);
+                    fprintf(stdout, "FNF sent\n");
+                    fflush(stdout);
+                    memset(filepath, 0, 255);
+                    fprintf(stdout, "filepath cleared: %s\n", filepath);
+                    fflush(stdout);
+                    success = 0;
+                } else
+                {
+                    success = 1;
+                    fclose(file);
+                }
+             } else
+             {
                 success = 1;
-                fclose(file);
-            }
+             }
         }
-        fprintf(stdout, "File Length: %d\n", fileLength);
         fprintf(stdout, "success: %d\n", success);
         if (success == 1)
         {
@@ -179,7 +180,6 @@ int send_data(int *sd, char *buffer)
 
 int receive_data(int* sd, char* buffer)
 {
-    int result = 0;
     int btr = BUFFER_SIZE;
     int n;
 
@@ -187,14 +187,14 @@ int receive_data(int* sd, char* buffer)
     {
         if(n == -1)
         {
-            result = -1;
+            return n;
         } else
         {
             buffer += n;
             btr -= n;
         }
     }
-    return result;
+    return n;
 }
 
 void command_get_controller(int* sd, char* buffer, char* fileName)
@@ -237,25 +237,32 @@ void command_snd_controller(int *sd, char *buffer, char *fileName)
 
     strcpy(filepath, "./files/");
     strcpy(filepath+8, fileName);
-
-    int transfer_complete = 0;
+    fprintf(stdout, "filepath: %s\n", filepath);
 
     if((file = fopen(filepath, "w+")) == NULL)
     {
-        perror("fopen\n");
+        perror("fopen, snd_controller\n");
     }
 
-    while(!transfer_complete)
+    char* buff = malloc(BUFFER_SIZE);
+
+    while(recv(*sd, buffer, BUFFER_SIZE, 0) > 0)
     {
-        receive_data(sd, buffer);
+        strcpy(buff, buffer);
         if(strcmp(buffer, COMMAND_FINISH) == 0)
         {
-            transfer_complete = 1;
-        } else
-        {
-            write_file(file, buffer);
-            memset(buffer, 0, BUFFER_SIZE);
+            fclose(file);
+            fprintf(stdout, "File received!\n");
+            break;
         }
+        if (write_file(file, buff) <= 0)
+        {
+            fclose(file);
+            fprintf(stderr, "Error writing to file\n");
+            close(*sd);
+        }
+        memset(buffer, 0, BUFFER_SIZE);
+        memset(buff, 0, BUFFER_SIZE);
     }
 
     fclose(file);

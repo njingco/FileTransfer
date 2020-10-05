@@ -83,6 +83,7 @@ int main(int argc, char **argv)
     if (bind(data_sd, (struct sockaddr *)&data_server, sizeof(data_server)) == -1)
     {
         perror("Error binding name to socket\n");
+        send_err(&control_sd, buffer);
         exit(2);
     }
     listen(data_sd, 5);
