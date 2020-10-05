@@ -36,13 +36,13 @@ int main(int argc, char *argv[])
 
         // Wait for OKY
         recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
-
+        fprintf(stdout, "\n(%s)\n", fileName);
         if (strcmp(rcvBuf, COMMAND_OKAY) == 0)
         {
             close(socketDesc);
             break;
         }
-        else if (strcmp(rcvBuf, COMMAND_FNF))
+        else if (strcmp(rcvBuf, COMMAND_FNF == 0))
         {
             fprintf(stdout, "\nFile you entered is not found (%s)\n", fileName);
             send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 
             if (strcmp(rcvBuf, COMMAND_FINISH) == 0)
             {
+                fclose(file);
                 fprintf(stdout, "File Received\n");
                 break;
             }
@@ -86,7 +87,6 @@ int main(int argc, char *argv[])
                 exit(1);
             }
         }
-        fclose(file);
     }
     // SEND Request - read from file and write to buffer
     else if (strcmp(reqType, COMMAND_SEND) == 0)
