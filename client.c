@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
         reqPort = atoi(argv[2]); // User specified port
         break;
     default:
-        fprintf(stderr, "Please enter the ip and port to listen to \n");
+        fprintf(stderr, "Please enter the ip and port \n");
         exit(1);
     }
 
