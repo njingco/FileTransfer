@@ -82,13 +82,13 @@ int main(int argc, char *argv[])
 
             if (write_file(file, rcvBuf) <= 0)
             {
-                close(file);
+                fclose(file);
                 fprintf(stderr, "Error with writing to the file\n");
                 close(socketDesc);
                 exit(1);
             }
         }
-        close(file);
+        fclose(file);
     }
     // SEND Request - read from file and write to buffer
     else if (strcmp(rcvBuf, COMMAND_SEND))
