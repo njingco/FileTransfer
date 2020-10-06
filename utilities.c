@@ -12,5 +12,6 @@ int write_file(FILE *file, char *buffer)
 {
     size_t result = -1;
     result = fwrite(buffer, 1, BUFFER_SIZE, file);
+    fflush(stdin);
     return result;
 }

@@ -30,13 +30,14 @@ int main(int argc, char *argv[])
     socketDesc = connectToServer(svrIP, SERVER_LISTEN_PORT);
 
     // Send Request to Server ----------------------------------------------
+    send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
+
     while (true)
     {
-        send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
-
         // Wait for OKY
         recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
-        fprintf(stdout, "\n(%s)\n", fileName);
+        fprintf(stdout, "\n(%s)\n", rcvBuf);
+
         if (strcmp(rcvBuf, COMMAND_OKAY) == 0)
         {
             close(socketDesc);
@@ -67,25 +68,24 @@ int main(int argc, char *argv[])
     {
         FILE *file = fopen(fileDir, "w+");
 
-        while (true)
+        while (recv(socketDesc, rcvBuf, BUFFER_SIZE, 0) > 0)
         {
-            memset(rcvBuf, 0, BUFFER_SIZE);
-            recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
-
             if (strcmp(rcvBuf, COMMAND_FINISH) == 0)
             {
                 fclose(file);
-                fprintf(stdout, "File Received\n");
+                fprintf(stdout, "\n\nFile Received\n");
                 break;
             }
 
-            if (write_file(file, rcvBuf) <= 0)
+            else if (write_file(file, rcvBuf) <= 0)
             {
                 fclose(file);
                 fprintf(stderr, "Error with writing to the file\n");
                 close(socketDesc);
                 exit(1);
             }
+
+            memset(rcvBuf, 0, BUFFER_SIZE);
         }
     }
     // SEND Request - read from file and write to buffer
@@ -197,6 +197,7 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
     bool validType = false;
 
     memset(buffer, 0, BUFFER_SIZE);
+    memset(file, 0, BUFFER_SIZE);
 
     while (!validType)
     {
