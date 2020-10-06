@@ -50,7 +50,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-            fprintf(stdout, "\nError, Closing Client.\n");
+            fprintf(stdout, "\nError, Closing Client, Port %d already in use.\n", reqPort);
+
             close(socketDesc);
             exit(1);
         }
@@ -67,17 +68,17 @@ int main(int argc, char *argv[])
     if (strcmp(reqType, COMMAND_GET) == 0)
     {
         FILE *file = fopen(fileDir, "w+");
-
+        char *buffer = malloc(sizeof(BUFFER_SIZE));
         while (recv(socketDesc, rcvBuf, BUFFER_SIZE, 0) > 0)
         {
+            strcpy(buffer, rcvBuf);
             if (strcmp(rcvBuf, COMMAND_FINISH) == 0)
             {
                 fclose(file);
                 fprintf(stdout, "\n\nFile Received\n");
                 break;
             }
-
-            else if (write_file(file, rcvBuf) <= 0)
+            if (write_file(file, buffer) <= 0)
             {
                 fclose(file);
                 fprintf(stderr, "Error with writing to the file\n");
@@ -85,6 +86,7 @@ int main(int argc, char *argv[])
                 exit(1);
             }
 
+            memset(buffer, 0, BUFFER_SIZE);
             memset(rcvBuf, 0, BUFFER_SIZE);
         }
     }
@@ -101,7 +103,7 @@ int main(int argc, char *argv[])
             memset(sndBuf, 0, BUFFER_SIZE);
         }
         memset(sndBuf, 0, BUFFER_SIZE);
-        strcpy(sndBuf, COMMAND_FNF);
+        strcpy(sndBuf, COMMAND_FINISH);
         send(socketDesc, sndBuf, BUFFER_SIZE, 0);
     }
 
@@ -216,11 +218,27 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
         }
     }
 
-    // filename
-    fprintf(stdout, "Enter the File Name with type (text.txt ): ");
-    fflush(stdout);
-
-    fscanf(stdin, "%s", fileName);
+    if ((strcmp(type, COMMAND_SEND)) == 0)
+    {
+        while (true)
+        {
+            // filename
+            fprintf(stdout, "Enter the File Name with type (text.txt): ");
+            fflush(stdout);
+            fscanf(stdin, "%s", fileName);
+            if (fileExist(fileName))
+            {
+                break;
+            }
+            fprintf(stdout, "File does not exist.");
+        }
+    }
+    else
+    {
+        fprintf(stdout, "Enter the File Name with type (text.txt): ");
+        fflush(stdout);
+        fscanf(stdin, "%s", fileName);
+    }
 
     sprintf(buffer, "%s:%d:%s", type, port, fileName);
 
@@ -228,4 +246,19 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
     strcat(file, fileName);
 
     return buffer;
+}
+
+bool fileExist(char *fileName)
+{
+    FILE *file = malloc(sizeof(FILE));
+
+    char fileDir[FILE_SIZE + 8];
+    sprintf(fileDir, "./files/%s", fileName);
+
+    if ((file = fopen(fileDir, "r")) == NULL)
+    {
+        return false;
+    }
+    fclose(file);
+    return true;
 }

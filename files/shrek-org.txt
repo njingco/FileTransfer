@@ -831,7 +831,7 @@ find it.
 
 {Turnstile clatters}
 
-{Chu                                                                                                                                                                                                                                    ckles}
+{Chuckles}
 
 {Sighs}
 
@@ -1039,7 +1039,7 @@ me, and I'll give you your swamp back.
 
 -Down to the last slime-covered toadstool.
 
--And the squatt                                                                                                                                                                    ers?
+-And the squatters?
 
 -As good as gone.
 
@@ -2549,7 +2549,7 @@ have never seen such a radiant beauty before. I'm Lord Farquaad.
 
 -Oh, that is so sweet. You don't have to waste good manners on the 
 
-orge. It's                                                                                                                                                                                                          not like it has feelings.
+orge. It's not like it has feelings.
 
 -No, you're right. It doesn't.
 
@@ -2707,7 +2707,7 @@ what! Now it's my turn! So you just shut up and pay attention! You are
 
 mean to me. You insult me and you don't appreciate anything that I do! 
 
-You're always pushing me around or                                                                                                                                                                     pushing me away.
+You're always pushing me around or pushing me away.
 
 -Oh, yeah? Well, if I treated you so bad, how come you came back?
 
@@ -3427,4 +3427,4 @@ I'm filled with emotion
 
 As I look
 
-Into your perfect face                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+Into your perfect face
