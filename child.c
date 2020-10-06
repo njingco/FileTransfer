@@ -18,8 +18,6 @@ int receive_request(int *sd, char *bp, int *btr, char *cmd, int *port, char *fil
             buff += n;
             bytes_to_read -= n;
         }
-        fprintf(stdout, "Received: %s\n", bp);
-        fflush(stdout);
         int success = -1;
         if (parse_command(cmd, bp) == -1)
         {
@@ -41,16 +39,11 @@ int receive_request(int *sd, char *bp, int *btr, char *cmd, int *port, char *fil
             {
                 strcpy(filepath, "./files/");
                 strcpy(filepath+8, fileName);
-                fprintf(stdout, "Filepath: %s\n", filepath);
                 if((file = fopen(filepath, "r")) == NULL)
                 {
                     perror("fopen, receive_request\n");
                     send_fnf(sd, bp);
-                    fprintf(stdout, "FNF sent\n");
-                    fflush(stdout);
                     memset(filepath, 0, 255);
-                    fprintf(stdout, "filepath cleared: %s\n", filepath);
-                    fflush(stdout);
                     success = 0;
                 } else
                 {
@@ -62,7 +55,6 @@ int receive_request(int *sd, char *bp, int *btr, char *cmd, int *port, char *fil
                 success = 1;
              }
         }
-        fprintf(stdout, "success: %d\n", success);
         if (success == 1)
         {
             validRequest = 1;
@@ -223,7 +215,7 @@ void command_get_controller(int* sd, char* buffer, char* fileName)
     memset(buffer, 0, BUFFER_SIZE);
     strcpy(buffer, COMMAND_FINISH);
     send_fin(sd, buffer);
-    fprintf(stdout, "FIN sent\n");
+    fprintf(stdout, "File sent\n");
 
     fclose(file);
     free(filepath);
@@ -237,7 +229,6 @@ void command_snd_controller(int *sd, char *buffer, char *fileName)
 
     strcpy(filepath, "./files/");
     strcpy(filepath+8, fileName);
-    fprintf(stdout, "filepath: %s\n", filepath);
 
     if((file = fopen(filepath, "w+")) == NULL)
     {
@@ -264,6 +255,7 @@ void command_snd_controller(int *sd, char *buffer, char *fileName)
         memset(buffer, 0, BUFFER_SIZE);
         memset(buff, 0, BUFFER_SIZE);
     }
+    fprintf(stdout, "File received\n");
 
     fclose(file);
     free(filepath);

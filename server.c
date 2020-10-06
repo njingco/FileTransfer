@@ -47,9 +47,8 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error accepting client\n");
             exit(1);
         }
-        fprintf(stdout, "Client connected with remote address: %s\n", inet_ntoa(client.sin_addr));
+        fprintf(stdout, "Client #%d connected!\n", currentClient+1);
         control_sockets[currentClient] = control_sd;
-        fprintf(stdout, "control_sd: %d\n", control_sd);
 
         if ((pid[currentClient] = fork()) == -1)
         {
@@ -61,14 +60,15 @@ int main(int argc, char **argv)
         }
         currentClient++;
     }
-    fprintf(stdout, "Child #%d with pid: %d\nChild control_sd: %d\n", currentClient, getpid(), control_sd);
+    fprintf(stdout, "Process created for client #%d\n", currentClient+1);
+    fflush(stdout);
 
     bp = buffer;
     bytes_to_read = BUFFER_SIZE;
 
     //Receive transfer command:port:filename)
     receive_request(&control_sd, bp, &bytes_to_read, command, &data_port, fileName);
-    fprintf(stdout, "Request validated\n");
+    fprintf(stdout, "Request validated for Client #%d\nCommand: %s, Port: %d, File: %s\n", currentClient+1, command, data_port, fileName);
 
     //Create, bind, accept data listening socket
     if ((data_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
