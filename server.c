@@ -1,5 +1,51 @@
+/*-----------------------------------------------------------------------------
+ * SOURCE FILE:    server.c
+ *
+ * PROGRAM:        server
+ *
+ * FUNCTIONS:      int main(int argc, char** argv)
+ *
+ * DATE:           October 1st, 2020
+ *
+ * REVISIONS:      N/A
+ *
+ * DESIGNER:       Tomas Quat, Nicole Jingco
+ *
+ * PROGRAMMER:     Tomas Quat
+ *
+ * NOTES:
+ * This file is the main launching point of the Server application
+* --------------------------------------------------------------------------*/
 #include "server.h"
-
+/*--------------------------------------------------------------------------
+ * FUNCTION:       main
+ *
+ * DATE:           October 1st, 2020
+ *
+ * REVISIONS:      N/A
+ *
+ * DESIGNER:       Tomas Quat, Nicole Jingco
+ *
+ * PROGRAMMER:     Tomas Quat
+ *
+ * INTERFACE:      int main(int argc, char **argv)
+ *						int argc: An integer representing the number of command line arguments
+ *						char **argv: A pointer to a character array containing any provided command line arguments
+ *
+ * RETURNS:        int: exit code
+ *
+ * NOTES:
+ *	This function is split into two primary components: Main process, Child process
+ *	Main process: 
+ *	The main process execution of this file creates a listening
+ *	socket, and listens for connection requests. When a client connects, the main
+ *	process creates a new child process to handle the newly connected client, then
+ *	continues to listen for new connections
+ *	Child Processes:
+ *	The child processes execution manages receiving the clients transfer command
+ *	Creating a socket for the client-provided data port, and running the correct
+ *	handler for the clients transfer command (GET or SEND)
+ * -----------------------------------------------------------------------*/
 pid_t pid[CLIENT_MAX];
 int control_sockets[CLIENT_MAX];
 
