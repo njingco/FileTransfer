@@ -1,5 +1,51 @@
+/*-----------------------------------------------------------------------------
+ * SOURCE FILE:    server.c
+ *
+ * PROGRAM:        server
+ *
+ * FUNCTIONS:      int main(int argc, char** argv)
+ *
+ * DATE:           October 1st, 2020
+ *
+ * REVISIONS:      N/A
+ *
+ * DESIGNER:       Tomas Quat, Nicole Jingco
+ *
+ * PROGRAMMER:     Tomas Quat
+ *
+ * NOTES:
+ * This file is the main launching point of the Server application
+* --------------------------------------------------------------------------*/
 #include "server.h"
-
+/*--------------------------------------------------------------------------
+ * FUNCTION:       main
+ *
+ * DATE:           October 1st, 2020
+ *
+ * REVISIONS:      N/A
+ *
+ * DESIGNER:       Tomas Quat, Nicole Jingco
+ *
+ * PROGRAMMER:     Tomas Quat
+ *
+ * INTERFACE:      int main(int argc, char **argv)
+ *						int argc: An integer representing the number of command line arguments
+ *						char **argv: A pointer to a character array containing any provided command line arguments
+ *
+ * RETURNS:        int: exit code
+ *
+ * NOTES:
+ *	This function is split into two primary components: Main process, Child process
+ *	Main process: 
+ *	The main process execution of this file creates a listening
+ *	socket, and listens for connection requests. When a client connects, the main
+ *	process creates a new child process to handle the newly connected client, then
+ *	continues to listen for new connections
+ *	Child Processes:
+ *	The child processes execution manages receiving the clients transfer command
+ *	Creating a socket for the client-provided data port, and running the correct
+ *	handler for the clients transfer command (GET or SEND)
+ * -----------------------------------------------------------------------*/
 pid_t pid[CLIENT_MAX];
 int control_sockets[CLIENT_MAX];
 
@@ -47,9 +93,8 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error accepting client\n");
             exit(1);
         }
-        fprintf(stdout, "Client connected with remote address: %s\n", inet_ntoa(client.sin_addr));
+        fprintf(stdout, "Client #%d connected!\n", currentClient+1);
         control_sockets[currentClient] = control_sd;
-        fprintf(stdout, "control_sd: %d\n", control_sd);
 
         if ((pid[currentClient] = fork()) == -1)
         {
@@ -61,14 +106,15 @@ int main(int argc, char **argv)
         }
         currentClient++;
     }
-    fprintf(stdout, "Child #%d with pid: %d\nChild control_sd: %d\n", currentClient, getpid(), control_sd);
+    fprintf(stdout, "Process created for client #%d\n", currentClient+1);
+    fflush(stdout);
 
     bp = buffer;
     bytes_to_read = BUFFER_SIZE;
 
     //Receive transfer command:port:filename)
     receive_request(&control_sd, bp, &bytes_to_read, command, &data_port, fileName);
-    fprintf(stdout, "Request validated\n");
+    fprintf(stdout, "Request validated for Client #%d\nCommand: %s, Port: %d, File: %s\n", currentClient+1, command, data_port, fileName);
 
     //Create, bind, accept data listening socket
     if ((data_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -83,6 +129,7 @@ int main(int argc, char **argv)
     if (bind(data_sd, (struct sockaddr *)&data_server, sizeof(data_server)) == -1)
     {
         perror("Error binding name to socket\n");
+        send_err(&control_sd, buffer);
         exit(2);
     }
     listen(data_sd, 5);
