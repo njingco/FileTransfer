@@ -1,9 +1,56 @@
+/*---------------------------------------------------------------------------------------
+ * SOURCE FILE:	    client.c
+ * 
+ * PROGRAM:		    client
+ * 
+ * FUNCTIONS:		int connectToServer(char *svrIP, int port);
+ *                  int createSocketDesc();
+ *                  struct sockaddr_in getServerDesc(int port);
+ *                  bool isConnected(int sockDesc, struct sockaddr_in server);
+ *                  char *getRequestInput(int port, char *reqType, char *file, int sockDesc);
+ *                  bool fileExist(char *fileName);
+ * 
+ * DATE:			October 4, 2020
+ * 
+ * REVISIONS:		Octoner 5, 2020 - Bug Fixing
+ *                  October 6, 2020 - More Comments
+ * 
+ * DESIGNERS:       Nicole Jingco, Tomas Quat
+ * 
+ * PROGRAMMERS:		Nicole Jingco
+ * 
+ * Notes:
+ * This file does all the client functionality
+ * ---------------------------------------------------------------------------------------*/
 #include "client.h"
 #include "utilities.h"
 
+/*--------------------------------------------------------------------------
+ * FUNCTION:       main
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 5, Fixed Some bugs with the Request type comparison
+ *                 October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      int argc, char *argv[] - arguements user add in before
+ *                                          executing the file. For this 
+ *                                          application, it will be the 
+ *                                          ip and data port number
+ *
+ * RETURNS:        
+ *
+ * NOTES:
+ * This function manages the client process of connecting server, managing 
+ * what the server sends back, and what the client will send to the server
+ * -----------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-    int reqPort;
+    int dataPort;
     char *svrIP;
     int socketDesc;
     char reqType[COMMAND_SIZE];
@@ -16,7 +63,7 @@ int main(int argc, char *argv[])
     {
     case 3:
         svrIP = argv[1];
-        reqPort = atoi(argv[2]); // User specified port
+        dataPort = atoi(argv[2]); // User specified port
         break;
     default:
         fprintf(stderr, "Please enter the ip and port \n");
@@ -24,13 +71,13 @@ int main(int argc, char *argv[])
     }
 
     fprintf(stdout, "IP: %s\n", svrIP);
-    fprintf(stdout, "Server Port: %d\n", reqPort);
+    fprintf(stdout, "Server Port: %d\n", dataPort);
 
-    // Connect to Server Connection Port -----------------------------------
+    // Connect to Server Connection Port
     socketDesc = connectToServer(svrIP, SERVER_LISTEN_PORT);
 
-    // Send Request to Server ----------------------------------------------
-    send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
+    // Send Request to Server
+    send(socketDesc, getRequestInput(dataPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
 
     while (true)
     {
@@ -38,28 +85,31 @@ int main(int argc, char *argv[])
         recv(socketDesc, rcvBuf, BUFFER_SIZE, 0);
         fprintf(stdout, "\n(%s)\n", rcvBuf);
 
+        // Receives an OKY
         if (strcmp(rcvBuf, COMMAND_OKAY) == 0)
         {
             close(socketDesc);
             break;
         }
+        // Receives a file not found FNF
         else if (strcmp(rcvBuf, COMMAND_FNF) == 0)
         {
             fprintf(stdout, "\nFile you entered is not found (%s)\n", fileName);
-            send(socketDesc, getRequestInput(reqPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
+            send(socketDesc, getRequestInput(dataPort, reqType, fileName, socketDesc), BUFFER_SIZE, 0);
         }
+        // Receives an error ERR meaning the port is already in use
         else
         {
-            fprintf(stdout, "\nError, Closing Client.\n");
+            fprintf(stdout, "\nError, Closing Client, Port %d already in use.\n", dataPort);
             close(socketDesc);
             exit(1);
         }
     }
 
-    // Connect to Server for File Transfer
-    socketDesc = connectToServer(svrIP, reqPort);
+    // Connect to Server again for File Transfer using the data port
+    socketDesc = connectToServer(svrIP, dataPort);
 
-    // File Dir
+    // File Directory
     char fileDir[FILE_SIZE + 8];
     sprintf(fileDir, "./files/%s", fileName);
 
@@ -67,9 +117,11 @@ int main(int argc, char *argv[])
     if (strcmp(reqType, COMMAND_GET) == 0)
     {
         FILE *file = fopen(fileDir, "w+");
-
+        char *buffer = malloc(sizeof(BUFFER_SIZE));
         while (recv(socketDesc, rcvBuf, BUFFER_SIZE, 0) > 0)
         {
+            strcpy(buffer, rcvBuf);
+            // Receives a Finish Command FIN, meaning all the file has been read
             if (strcmp(rcvBuf, COMMAND_FINISH) == 0)
             {
                 fclose(file);
@@ -77,7 +129,8 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            else if (write_file(file, rcvBuf) <= 0)
+            // Write the data received to the file
+            if (write_file(file, buffer) <= 0)
             {
                 fclose(file);
                 fprintf(stderr, "Error with writing to the file\n");
@@ -85,6 +138,8 @@ int main(int argc, char *argv[])
                 exit(1);
             }
 
+            // empty out the buffers
+            memset(buffer, 0, BUFFER_SIZE);
             memset(rcvBuf, 0, BUFFER_SIZE);
         }
     }
@@ -92,24 +147,45 @@ int main(int argc, char *argv[])
     else if (strcmp(reqType, COMMAND_SEND) == 0)
     {
         memset(sndBuf, 0, BUFFER_SIZE);
-
         FILE *file = fopen(fileDir, "r");
 
+        // Read the file and send to the server
         while (read_file(file, sndBuf) != 0)
         {
             send(socketDesc, sndBuf, BUFFER_SIZE, 0);
             memset(sndBuf, 0, BUFFER_SIZE);
         }
+        // When its done reading, empty out the buffer, and send the FIN command
         memset(sndBuf, 0, BUFFER_SIZE);
-        strcpy(sndBuf, COMMAND_FNF);
+        strcpy(sndBuf, COMMAND_FINISH);
         send(socketDesc, sndBuf, BUFFER_SIZE, 0);
     }
 
+    // Clean up and close the socket
     close(socketDesc);
     exit(1);
     return 0;
 }
 
+/*--------------------------------------------------------------------------
+ * FUNCTION:       connectToServer
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      char *svrIP - Server IP
+ *                  int port   - Server Port
+ *
+ * RETURNS:        Returns the socket Descriptor
+ *
+ * NOTES:
+ * This function all the fucntions requires to connect to the server
+ * -----------------------------------------------------------------------*/
 int connectToServer(char *svrIP, int port)
 {
     int socketDesc;
@@ -120,10 +196,9 @@ int connectToServer(char *svrIP, int port)
     socketDesc = createSocketDesc();
 
     // Set server description -----------------------------------------------
-    svrDesc = getServerDesc(port); // for testing
+    svrDesc = getServerDesc(port);
 
     // HP ------------------------------------------------------------------
-    // hp = getHostent(svrIP, svrDesc);
     if ((hp = gethostbyname(svrIP)) == NULL)
     {
         fprintf(stderr, "Unknown server address\n");
@@ -133,13 +208,30 @@ int connectToServer(char *svrIP, int port)
     bcopy(hp->h_addr, (char *)&svrDesc.sin_addr, hp->h_length);
 
     // Connect -------------------------------------------------------------
-    // connectToServer(socketDesc, svrDesc);
-    if (!setServerDesc(socketDesc, svrDesc))
+    if (!isConnected(socketDesc, svrDesc))
         exit(1);
 
     return socketDesc;
 }
-// Creates a scoket descriptor
+
+/*--------------------------------------------------------------------------
+ * FUNCTION:       createSocketDesc
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      NA
+ *
+ * RETURNS:        Returns a socket Descriptor
+ *
+ * NOTES:
+ * Creates and returns the Socket Descriptor
+ * -----------------------------------------------------------------------*/
 int createSocketDesc()
 {
     int sd;
@@ -152,7 +244,24 @@ int createSocketDesc()
     return sd;
 }
 
-// get Server Description
+/*--------------------------------------------------------------------------
+ * FUNCTION:       getServerDesc
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      int port - Server Port
+ *
+ * RETURNS:        Returns a structure for the server description
+ *
+ * NOTES:
+ * 
+ * -----------------------------------------------------------------------*/
 struct sockaddr_in getServerDesc(int port)
 {
     struct sockaddr_in server;
@@ -164,22 +273,27 @@ struct sockaddr_in getServerDesc(int port)
     return server;
 }
 
-//Get Hostent Structure
-struct hostent *getHostent(char *ip, struct sockaddr_in server)
-{
-    struct hostent *hp;
-
-    if ((hp = gethostbyname(ip)) == NULL)
-    {
-        fprintf(stderr, "Unknown server address\n");
-        exit(1);
-    }
-    bcopy(hp->h_addr, (char *)&server.sin_addr, hp->h_length);
-    return hp;
-}
-
-//Connect to Server
-bool setServerDesc(int sockDesc, struct sockaddr_in server)
+/*--------------------------------------------------------------------------
+ * FUNCTION:       setServerDesc
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 5, Fixed Some bugs with the Request type comparison
+ *                 October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      int sockDesc - Socket Descriptor
+ *                 struct sockaddr_in server - Server struct
+ *
+ * RETURNS:        Returns true if it is connected to the server
+ *
+ * NOTES:
+ * This connects to the server and returns true if connected.
+ * -----------------------------------------------------------------------*/
+bool isConnected(int sockDesc, struct sockaddr_in server)
 {
     if (connect(sockDesc, (struct sockaddr *)&server, sizeof(server)) == -1)
     {
@@ -189,6 +303,29 @@ bool setServerDesc(int sockDesc, struct sockaddr_in server)
     return true;
 }
 
+/*--------------------------------------------------------------------------
+ * FUNCTION:        getRequestInput
+ *
+ * DATE:            October 4, 2020 
+ *
+ * REVISIONS:       October 5, Fixed Some bugs with the Request type comparison
+ *                  October 6, 2020 - More Comments
+ * 
+ * DESIGNER:        Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:      Nicole Jingco
+ *
+ * INTERFACE:       int port - Data Port 
+ *                  char *reqType - Request Type pointer
+ *                  char *file    - File name pointer
+ *                  int sockDesc  - Socket Description
+ *
+ * RETURNS:        Returns the formatted request buffer 
+ *
+ * NOTES:
+ * This will re-prompt the user if they inputted an invalid request type,
+ * or file that does not exist. This also has the option exit usign EXT
+ * -----------------------------------------------------------------------*/
 char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
 {
     char *type = malloc(COMMAND_SIZE);
@@ -199,6 +336,7 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
     memset(buffer, 0, BUFFER_SIZE);
     memset(file, 0, BUFFER_SIZE);
 
+    // Get an dvalid date Request type input
     while (!validType)
     {
         fprintf(stdout, "\nEnter the Request Type (SND, GET, or EXT): ");
@@ -216,16 +354,71 @@ char *getRequestInput(int port, char *reqType, char *file, int sockDesc)
         }
     }
 
-    // filename
-    fprintf(stdout, "Enter the File Name with type (text.txt ): ");
-    fflush(stdout);
+    // If Request type is send, get input for filename and checks if
+    // the file exist in their folder
+    if ((strcmp(type, COMMAND_SEND)) == 0)
+    {
+        while (true)
+        {
+            // filename
+            fprintf(stdout, "Enter the File Name with type (text.txt): ");
+            fflush(stdout);
+            fscanf(stdin, "%s", fileName);
+            if (fileExist(fileName))
+            {
+                break;
+            }
+            fprintf(stdout, "File does not exist.");
+        }
+    }
+    // if Request type is get, it will not validate the file
+    else
+    {
+        fprintf(stdout, "Enter the File Name with type (text.txt): ");
+        fflush(stdout);
+        fscanf(stdin, "%s", fileName);
+    }
 
-    fscanf(stdin, "%s", fileName);
-
+    // Creates the formatted buffer
     sprintf(buffer, "%s:%d:%s", type, port, fileName);
 
+    // Coppies the type and file name to the pointer
     strcpy(reqType, type);
     strcat(file, fileName);
 
     return buffer;
+}
+
+/*--------------------------------------------------------------------------
+ * FUNCTION:       fileExist
+ *
+ * DATE:           October 4, 2020 
+ *
+ * REVISIONS:      October 5, Fixed Some bugs with the Request type comparison
+ *                 October 6, 2020 - More Comments
+ * 
+ * DESIGNER:       Nicole Jingco, Tomas Quat
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      char *fileName - file name
+ *
+ * RETURNS:        Returns true if the file exist in the folder
+ *
+ * NOTES:
+ * This checks if the filename exist in the folder.
+ * -----------------------------------------------------------------------*/
+bool fileExist(char *fileName)
+{
+    FILE *file = malloc(sizeof(FILE));
+
+    char fileDir[FILE_SIZE + 8];
+    sprintf(fileDir, "./files/%s", fileName);
+
+    if ((file = fopen(fileDir, "r")) == NULL)
+    {
+        return false;
+    }
+    fclose(file);
+    return true;
 }

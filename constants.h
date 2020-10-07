@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define SERVER_LISTEN_PORT 7014
+#define SERVER_LISTEN_PORT 7005
 #define BUFFER_SIZE 255
 #define FILE_SIZE 251
 #define COMMAND_SIZE 4
