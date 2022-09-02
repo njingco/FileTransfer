@@ -1,4 +1,6 @@
 # FileTransfer
+This is a simple Text File Transfer Applciation with a client and server using TCP/IP protocol.
+
 
 # Build
 
